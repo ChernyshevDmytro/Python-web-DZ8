@@ -19,10 +19,7 @@ def generate_fake_data(NUMBER_STUDENTS) -> tuple():
     return first_names
 students_names=generate_fake_data(NUMBER_STUDENTS)
 
-def prepare_data(NUMBER_GROUPS, SUBJECTS, NAME_TEACHERS, students_names, MARKS, NUMBER_MARKS) -> tuple():
-    for_grades =[]
-    for i in range (1, len(MARKS)+1):
-        for_grades.append((i, ))      
+def prepare_data(NUMBER_GROUPS, SUBJECTS, NAME_TEACHERS, students_names, MARKS, NUMBER_MARKS) -> tuple():    
   
     for_groups = []    
     for j in range (1, NUMBER_GROUPS+1):
@@ -30,7 +27,7 @@ def prepare_data(NUMBER_GROUPS, SUBJECTS, NAME_TEACHERS, students_names, MARKS, 
 
     for_students = []
     for student in students_names: 
-        for_students.append((student, randint(1, NUMBER_GROUPS)))
+        for_students.append((student, ))
       
     for_subjects=[]
     for subject in SUBJECTS:
@@ -43,48 +40,50 @@ def prepare_data(NUMBER_GROUPS, SUBJECTS, NAME_TEACHERS, students_names, MARKS, 
     for_all = []
 
     for mark in range(1, NUMBER_MARKS + 1):
-        for subject in  SUBJECTS:           
+        for subject in range(1, len(SUBJECTS)+1):           
             for id, student in enumerate(students_names):
-                mark_date = datetime(2022, randint(1, 12), randint(10, 20)).date()
-                # Выполняем цикл по количеству сотрудников
-                for_all.append((id+1, student, choice(NAME_TEACHERS), subject, choice(MARKS), mark_date))
+                if id <=10:
+                    group_number=1
+                elif id >10 and id <=20:
+                    group_number=2
+                else:
+                    group_number=3                                
 
-    return for_grades, for_groups, for_students, for_subjects, for_teachers, for_all
+                mark_date = datetime(2022, randint(1, 12), randint(10, 20)).date()                
+                for_all.append((id+1, group_number, choice(range(1, len(NAME_TEACHERS)+1)), subject, choice(MARKS), mark_date))
 
-for_grades, for_groups, for_students, for_subjects, for_teachers, for_all = prepare_data(NUMBER_GROUPS, SUBJECTS, NAME_TEACHERS, students_names, MARKS, NUMBER_MARKS)
+    return for_groups, for_students, for_subjects, for_teachers, for_all
 
-def insert_data_to_db(for_grades, for_groups, for_students, for_subjects, for_teachers, for_all) -> None:
+for_groups, for_students, for_subjects, for_teachers, for_all = prepare_data(NUMBER_GROUPS, SUBJECTS, NAME_TEACHERS, students_names, MARKS, NUMBER_MARKS)
+
+def insert_data_to_db(for_groups, for_students, for_subjects, for_teachers, for_all) -> None:
 
     with sqlite3.connect('students.db') as con:
 
         cur = con.cursor()
 
-        sql_to_grades = """INSERT INTO list_of_grades(grade)
-                               VALUES (?)"""
-        cur.executemany(sql_to_grades, for_grades)
-
-        sql_to_groups = """INSERT INTO list_of_groups(group_number)
+        sql_to_groups = """INSERT INTO groups(number)
                                VALUES (?)"""
         cur.executemany(sql_to_groups, for_groups)
 
 
-        sql_to_students = """INSERT INTO list_of_students(student_name, group_number)
-                               VALUES (?, ?)"""
+        sql_to_students = """INSERT INTO students(full_name)
+                               VALUES (?)"""
         cur.executemany(sql_to_students, for_students)
 
-        sql_to_subjects = """INSERT INTO list_of_subjects(subject_name)
+        sql_to_subjects = """INSERT INTO subjects(subject)
                               VALUES (?)"""
         cur.executemany(sql_to_subjects, for_subjects) 
 
-        sql_to_teachers = """INSERT INTO list_of_teachers(teacher_name)
+        sql_to_teachers = """INSERT INTO teachers(full_name)
                               VALUES (?)"""
         cur.executemany(sql_to_teachers, for_teachers)
 
 
-        sql_to_all = """INSERT INTO total(student_id, student_name, teacher_name, subject_name, grade, graded_at)
+        sql_to_all = """INSERT INTO total(student_id, student_group, teacher_id, subject_id, grade, graded_at)
                               VALUES (?, ?, ?, ?, ?, ?)"""
         cur.executemany(sql_to_all, for_all)
 
         con.commit()
 if __name__ == "__main__":
-    insert_data_to_db(for_grades, for_groups, for_students, for_subjects, for_teachers, for_all)  
+    insert_data_to_db(for_groups, for_students, for_subjects, for_teachers, for_all)  
